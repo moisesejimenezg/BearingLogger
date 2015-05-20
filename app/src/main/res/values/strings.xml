@@ -3,4 +3,12 @@
 
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
+    <string name="startButton">Start Logging Bearing</string>
+
+    <!-- INTENT ACTIONS -->
+    <string name="LaunchService">com.moisesjimenez.masterarbeit.bearinglogger.intents.LaunchService</string>
+    <string name="WriteString">com.moisesjimenez.masterarbeit.bearinglogger.intents.WriteString</string>
+
+    <!-- INTENT EXTRAS -->
+    <string name="AzimutExtra">com.moisesjimenez.masterarbeti.bearinglogger.extras.azimut</string>
 </resources>
