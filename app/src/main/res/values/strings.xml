@@ -3,6 +3,7 @@
 
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
-    <string name="startButton">Start Logging Bearing</string>
+    <string name="startSwitch">Start Logging Bearing</string>
+    <string name="filterSwitch">Filter</string>
     <string name="defaultBearing">0.0°</string>
 </resources>
