@@ -3,6 +3,7 @@ package com.moisesjimenez.masterarbeit.bearinglogger;
 import android.app.Activity;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.hardware.Sensor;
@@ -14,29 +15,31 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.CompoundButton;
 import android.widget.Switch;
+import android.widget.TextView;
 
 
 public class MainActivity extends Activity implements SensorEventListener{
     private Switch startSwitch;
+    private TextView bearingTextView;
     private AlarmManager alarmManager;
     private PendingIntent alarmIntent;
     private Context context;
     private SensorManager sensorManager;
     private Sensor accelerometerSensor;
     private Sensor magnetometerSensor;
+    private float[] mGravity = null;
+    private float[] mGeomagnetic = null;
 
     private float azimut;
 
-    private String WRITE_STRING, AZIMUT_EXTRA;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         context = getBaseContext();
         startSwitch = (Switch)findViewById(R.id.startSwitch);
+        bearingTextView = (TextView)findViewById(R.id.bearingTextView);
 //        alarmManager = (AlarmManager)getSystemService(Context.ALARM_SERVICE);
-        WRITE_STRING = getResources().getString(R.string.WriteString);
-        AZIMUT_EXTRA = getResources().getString(R.string.AzimutExtra);
         sensorManager = (SensorManager)getSystemService(Context.SENSOR_SERVICE);
         accelerometerSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         magnetometerSensor = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
@@ -52,6 +55,9 @@ public class MainActivity extends Activity implements SensorEventListener{
 //                            1 * 1000, alarmIntent);
                 } else {
                     sensorManager.unregisterListener(MainActivity.this);
+                    Intent serviceIntent = new Intent(MainActivity.this, IOService.class);
+                    serviceIntent.setAction(Constants.intentStopLog);
+                    startService(serviceIntent);
 //                    if (alarmManager!= null) {
 //                        alarmManager.cancel(alarmIntent);
 //                    }
@@ -84,8 +90,6 @@ public class MainActivity extends Activity implements SensorEventListener{
 
     @Override
     public void onSensorChanged(SensorEvent event) {
-        float[] mGravity = null;
-        float[] mGeomagnetic = null;
         if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER)
             mGravity = event.values;
         if (event.sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD)
@@ -98,10 +102,11 @@ public class MainActivity extends Activity implements SensorEventListener{
                 float orientation[] = new float[3];
                 SensorManager.getOrientation(R, orientation);
                 azimut = orientation[0]; // orientation contains: azimut, pitch and roll
-                Intent serviceIntent = new Intent();
-                serviceIntent.setAction(WRITE_STRING);
-                serviceIntent.putExtra(AZIMUT_EXTRA,Float.toString(azimut));
+                Intent serviceIntent = new Intent(this,IOService.class);
+                serviceIntent.setAction(Constants.intentWriteString);
+                serviceIntent.putExtra(Constants.extraAzimut, System.currentTimeMillis() + "," + Float.toString(azimut));
                 startService(serviceIntent);
+                bearingTextView.setText(Float.toString(azimut));
             }
         }
     }
@@ -110,4 +115,5 @@ public class MainActivity extends Activity implements SensorEventListener{
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
 
     }
+
 }
