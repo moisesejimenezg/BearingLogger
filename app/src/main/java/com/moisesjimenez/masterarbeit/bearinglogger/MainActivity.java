@@ -46,8 +46,8 @@ public class MainActivity extends Activity implements SensorEventListener{
         startSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 if (isChecked) {
-                    sensorManager.registerListener(MainActivity.this, accelerometerSensor, SensorManager.SENSOR_DELAY_FASTEST);
-                    sensorManager.registerListener(MainActivity.this, magnetometerSensor, SensorManager.SENSOR_DELAY_FASTEST);
+                    sensorManager.registerListener(MainActivity.this, accelerometerSensor, SensorManager.SENSOR_DELAY_UI);
+                    sensorManager.registerListener(MainActivity.this, magnetometerSensor, SensorManager.SENSOR_DELAY_UI);
 //                    Intent intent = new Intent(context, AlarmReceiver.class);
 //                    alarmIntent = PendingIntent.getBroadcast(context,0,intent,0);
 //                    alarmManager.setInexactRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP,
@@ -101,7 +101,9 @@ public class MainActivity extends Activity implements SensorEventListener{
             if (success) {
                 float orientation[] = new float[3];
                 SensorManager.getOrientation(R, orientation);
-                azimut = orientation[0]; // orientation contains: azimut, pitch and roll
+                azimut = (float)Math.toDegrees(orientation[0]); // orientation contains: azimut, pitch and roll
+                if(azimut<0)
+                    azimut+=360;
                 Intent serviceIntent = new Intent(this,IOService.class);
                 serviceIntent.setAction(Constants.intentWriteString);
                 serviceIntent.putExtra(Constants.extraAzimut, System.currentTimeMillis() + "," + Float.toString(azimut));
