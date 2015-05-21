@@ -8,7 +8,7 @@
     <Switch
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/startButton"
+        android:text="@string/startSwitch"
         android:textAppearance="?android:attr/textAppearanceLarge"
         android:id="@+id/startSwitch"
         android:layout_centerVertical="true"
@@ -20,6 +20,15 @@
         android:textAppearance="?android:attr/textAppearanceLarge"
         android:text="@string/defaultBearing"
         android:id="@+id/bearingTextView"
+        android:layout_below="@+id/filterSwitch"
+        android:layout_centerHorizontal="true" />
+
+    <Switch
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/filterSwitch"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:id="@+id/filterSwitch"
         android:layout_below="@+id/startSwitch"
         android:layout_centerHorizontal="true" />
 </RelativeLayout>
