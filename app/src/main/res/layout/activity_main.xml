@@ -14,15 +14,6 @@
         android:layout_centerVertical="true"
         android:layout_centerHorizontal="true" />
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textAppearance="?android:attr/textAppearanceLarge"
-        android:text="@string/defaultBearing"
-        android:id="@+id/bearingTextView"
-        android:layout_below="@+id/filterSwitch"
-        android:layout_centerHorizontal="true" />
-
     <Switch
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -30,5 +21,14 @@
         android:textAppearance="?android:attr/textAppearanceLarge"
         android:id="@+id/filterSwitch"
         android:layout_below="@+id/startSwitch"
+        android:layout_centerHorizontal="true" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:text="@string/defaultBearing"
+        android:id="@+id/bearingTextView"
+        android:layout_below="@+id/filterSwitch"
         android:layout_centerHorizontal="true" />
 </RelativeLayout>
