@@ -6,6 +6,7 @@ package com.moisesjimenez.masterarbeit.bearinglogger;
 public class Constants {
     public static final String  dateFormatString =                  "ddMMyyyy_HHmmss",
                                 applicationDomain =                 "com.moisesjimenez.masterarbeit.bearinglogger.",
+                                wakeLockName =                      applicationDomain + "power.WakeLockName",
                                 intentLaunchService =               applicationDomain + "intents.LaunchService",
                                 intentStopLog =                     applicationDomain + "intents.StopLog",
                                 intentWriteString =                 applicationDomain + "intents.WriteString",

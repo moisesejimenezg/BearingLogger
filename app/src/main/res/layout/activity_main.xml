@@ -8,11 +8,33 @@
     <Switch
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/startSwitch"
+        android:text="@string/startSwitchLabel"
         android:textAppearance="?android:attr/textAppearanceLarge"
         android:id="@+id/startSwitch"
         android:layout_centerVertical="true"
-        android:layout_centerHorizontal="true" />
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="10sp" />
+
+    <Switch
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/logSwitchLabel"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:id="@+id/logSwitch"
+        android:layout_below="@+id/startSwitch"
+        android:layout_centerVertical="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="10sp" />
+
+    <Switch
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/filterSwitchLabel"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:id="@+id/filterSwitch"
+        android:layout_below="@+id/logSwitch"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="10sp" />
 
     <TextView
         android:layout_width="wrap_content"
@@ -21,14 +43,5 @@
         android:text="@string/defaultBearing"
         android:id="@+id/bearingTextView"
         android:layout_below="@+id/filterSwitch"
-        android:layout_centerHorizontal="true" />
-
-    <Switch
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/filterSwitch"
-        android:textAppearance="?android:attr/textAppearanceLarge"
-        android:id="@+id/filterSwitch"
-        android:layout_below="@+id/startSwitch"
         android:layout_centerHorizontal="true" />
 </RelativeLayout>

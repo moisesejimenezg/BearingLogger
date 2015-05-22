@@ -11,6 +11,7 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Bundle;
+import android.os.PowerManager;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.CompoundButton;
@@ -19,27 +20,34 @@ import android.widget.TextView;
 
 
 public class MainActivity extends Activity implements SensorEventListener{
-    private int FILTER_LENGTH = 1;
 
-    private Switch startSwitch, filterSwitch;
+    private Switch startSwitch, filterSwitch, logSwitch;
     private TextView bearingTextView;
     private SensorManager sensorManager;
     private Sensor accelerometerSensor;
     private Sensor magnetometerSensor;
+
+    private int filterCount = 0, FILTER_LENGTH = 1;
+    private float azimut = 0.0f;
     private float[] mGravity = null;
     private float[] mGeomagnetic = null;
-    private int filterCount = 0;
+    private boolean willLog = false;
 
-    private float azimut = 0.0f;
-
+    private PowerManager powerManager;
+    private PowerManager.WakeLock wakeLock;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         startSwitch = (Switch)findViewById(R.id.startSwitch);
         filterSwitch = (Switch)findViewById(R.id.filterSwitch);
+        logSwitch = (Switch)findViewById(R.id.logSwitch);
+
         bearingTextView = (TextView)findViewById(R.id.bearingTextView);
+
+        powerManager = (PowerManager)getSystemService(Context.POWER_SERVICE);
         sensorManager = (SensorManager)getSystemService(Context.SENSOR_SERVICE);
+
         accelerometerSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         magnetometerSensor = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
         startSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
@@ -47,11 +55,14 @@ public class MainActivity extends Activity implements SensorEventListener{
                 if (isChecked) {
                     sensorManager.registerListener(MainActivity.this, accelerometerSensor, SensorManager.SENSOR_DELAY_UI);
                     sensorManager.registerListener(MainActivity.this, magnetometerSensor, SensorManager.SENSOR_DELAY_UI);
+                    wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,Constants.wakeLockName);
+                    wakeLock.acquire();
                 } else {
                     sensorManager.unregisterListener(MainActivity.this);
                     Intent serviceIntent = new Intent(MainActivity.this, IOService.class);
                     serviceIntent.setAction(Constants.intentStopLog);
                     startService(serviceIntent);
+                    wakeLock.release();
                 }
             }
         });
@@ -63,6 +74,11 @@ public class MainActivity extends Activity implements SensorEventListener{
                     FILTER_LENGTH = 1;
                 }
                 filterCount = 0;
+            }
+        });
+        logSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener(){
+            public void onCheckedChanged(CompoundButton buttonView,boolean isChecked){
+                willLog = isChecked;
             }
         });
     }
@@ -110,11 +126,13 @@ public class MainActivity extends Activity implements SensorEventListener{
                 azimut+=tempAzimut;
                 if(filterCount == FILTER_LENGTH) {
                     filterCount = 0;
-                    Intent serviceIntent = new Intent(this, IOService.class);
-                    serviceIntent.setAction(Constants.intentWriteString);
-                    azimut/=10;
-                    serviceIntent.putExtra(Constants.extraAzimut, System.currentTimeMillis() + "," + Float.toString(azimut));
-                    startService(serviceIntent);
+                    azimut/=FILTER_LENGTH;
+                    if(willLog) {
+                        Intent serviceIntent = new Intent(this, IOService.class);
+                        serviceIntent.setAction(Constants.intentWriteString);
+                        serviceIntent.putExtra(Constants.extraAzimut, System.currentTimeMillis() + "," + Float.toString(azimut));
+                        startService(serviceIntent);
+                    }
                     bearingTextView.setText(Float.toString(azimut));
                     azimut = 0;
                 }
