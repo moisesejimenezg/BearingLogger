@@ -20,18 +20,18 @@ import android.widget.TextView;
 
 
 public class MainActivity extends Activity implements SensorEventListener{
-    private int FILTER_LENGTH = 1;
 
-    private Switch startSwitch, filterSwitch;
+    private Switch startSwitch, filterSwitch, logSwitch;
     private TextView bearingTextView;
     private SensorManager sensorManager;
     private Sensor accelerometerSensor;
     private Sensor magnetometerSensor;
+
+    private int filterCount = 0, FILTER_LENGTH = 1;
+    private float azimut = 0.0f;
     private float[] mGravity = null;
     private float[] mGeomagnetic = null;
-    private int filterCount = 0;
-
-    private float azimut = 0.0f;
+    private boolean willLog = false;
 
     private PowerManager powerManager;
     private PowerManager.WakeLock wakeLock;
@@ -41,6 +41,8 @@ public class MainActivity extends Activity implements SensorEventListener{
         setContentView(R.layout.activity_main);
         startSwitch = (Switch)findViewById(R.id.startSwitch);
         filterSwitch = (Switch)findViewById(R.id.filterSwitch);
+        logSwitch = (Switch)findViewById(R.id.logSwitch);
+
         bearingTextView = (TextView)findViewById(R.id.bearingTextView);
 
         powerManager = (PowerManager)getSystemService(Context.POWER_SERVICE);
@@ -72,6 +74,11 @@ public class MainActivity extends Activity implements SensorEventListener{
                     FILTER_LENGTH = 1;
                 }
                 filterCount = 0;
+            }
+        });
+        logSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener(){
+            public void onCheckedChanged(CompoundButton buttonView,boolean isChecked){
+                willLog = isChecked;
             }
         });
     }
@@ -119,11 +126,13 @@ public class MainActivity extends Activity implements SensorEventListener{
                 azimut+=tempAzimut;
                 if(filterCount == FILTER_LENGTH) {
                     filterCount = 0;
-                    Intent serviceIntent = new Intent(this, IOService.class);
-                    serviceIntent.setAction(Constants.intentWriteString);
                     azimut/=FILTER_LENGTH;
-                    serviceIntent.putExtra(Constants.extraAzimut, System.currentTimeMillis() + "," + Float.toString(azimut));
-                    startService(serviceIntent);
+                    if(willLog) {
+                        Intent serviceIntent = new Intent(this, IOService.class);
+                        serviceIntent.setAction(Constants.intentWriteString);
+                        serviceIntent.putExtra(Constants.extraAzimut, System.currentTimeMillis() + "," + Float.toString(azimut));
+                        startService(serviceIntent);
+                    }
                     bearingTextView.setText(Float.toString(azimut));
                     azimut = 0;
                 }
