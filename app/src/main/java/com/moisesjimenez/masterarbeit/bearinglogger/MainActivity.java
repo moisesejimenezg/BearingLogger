@@ -1,9 +1,6 @@
 package com.moisesjimenez.masterarbeit.bearinglogger;
 
 import android.app.Activity;
-import android.app.AlarmManager;
-import android.app.PendingIntent;
-import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.hardware.Sensor;
@@ -39,7 +36,7 @@ public class MainActivity extends Activity implements SensorEventListener{
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        startSwitch = (Switch)findViewById(R.id.startSwitch);
+        startSwitch = (Switch)findViewById(R.id.bearingSwitch);
         filterSwitch = (Switch)findViewById(R.id.filterSwitch);
         logSwitch = (Switch)findViewById(R.id.logSwitch);
 

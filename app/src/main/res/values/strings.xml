@@ -3,8 +3,12 @@
 
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
-    <string name="startSwitchLabel">Start</string>
+    <string name="bearingSwitchLabel">Bearing</string>
     <string name="filterSwitchLabel">Filter</string>
     <string name="logSwitchLabel">Log</string>
+    <string name="stepCountSwitchLabel">Step Count</string>
+    <string name="bearingTextViewLabel">Bearing</string>
+    <string name="stepCountTextViewLabel">Step count</string>
     <string name="defaultBearing">0.0°</string>
+    <string name="defaultStepCount">0</string>
 </resources>
