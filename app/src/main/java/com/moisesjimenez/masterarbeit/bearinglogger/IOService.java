@@ -1,14 +1,12 @@
 package com.moisesjimenez.masterarbeit.bearinglogger;
 
 import android.app.IntentService;
-import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.OutputStream;
 import java.io.PrintStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -22,7 +20,7 @@ public class IOService extends IntentService {
     private String currentFileNameString = "", dateString= "";
     private SimpleDateFormat simpleDateFormat;
     private SharedPreferences sharedPreferences;
-    private File logFile;
+    private File logFile, stepCountLogFile;
     private FileOutputStream fileOutputStream;
 
     public IOService(){
@@ -34,7 +32,7 @@ public class IOService extends IntentService {
         String action = intent.getAction();
         if(sharedPreferences == null)
             sharedPreferences = getSharedPreferences(Constants.sharedPreferencesName,0);
-        if(action == Constants.intentWriteString){
+        if(action == Constants.intentWriteAzimutString){
             started = sharedPreferences.getBoolean(Constants.sharedPreferencesLogFileStarted,false);
             if(!started){
                 started = true;
@@ -53,6 +51,16 @@ public class IOService extends IntentService {
             String toWrite = intent.getStringExtra(Constants.extraAzimut);
             try {
                 PrintStream printStream = new PrintStream(new BufferedOutputStream(new FileOutputStream(logFile,true)));
+                printStream.append(toWrite+"\n");
+                printStream.close();
+            }catch (Exception e){
+                e.printStackTrace();
+            }
+        }else if(action == Constants.intentWriteStepCountString){
+            stepCountLogFile = new File(getExternalFilesDir(null),Constants.stepCountLogFileName);
+            String toWrite = intent.getStringExtra(Constants.extraStepCount);
+            try {
+                PrintStream printStream = new PrintStream(new BufferedOutputStream(new FileOutputStream(stepCountLogFile,true)));
                 printStream.append(toWrite+"\n");
                 printStream.close();
             }catch (Exception e){
