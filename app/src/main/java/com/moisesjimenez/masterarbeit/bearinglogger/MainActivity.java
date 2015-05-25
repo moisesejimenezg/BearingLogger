@@ -130,7 +130,7 @@ public class MainActivity extends Activity implements SensorEventListener{
                         serviceIntent.putExtra(Constants.extraAzimut, System.currentTimeMillis() + "," + Float.toString(azimut));
                         startService(serviceIntent);
                     }
-                    bearingTextView.setText(Float.toString(azimut));
+                    bearingTextView.setText(String.format("%03.2f",azimut)+"\u00b0");
                     azimut = 0;
                 }
             }
