@@ -7,3 +7,4 @@
 app/app.iml
 build/intermediates/gradle_project_sync_data.bin
 local.properties
+.gradle/2.2.1/taskArtifacts/outputFileStates.bin
