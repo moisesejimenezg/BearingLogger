@@ -11,6 +11,7 @@ import android.os.Bundle;
 import android.os.PowerManager;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.WindowManager;
 import android.widget.CompoundButton;
 import android.widget.Switch;
 import android.widget.TextView;
@@ -18,13 +19,12 @@ import android.widget.TextView;
 
 public class MainActivity extends Activity implements SensorEventListener{
 
-    private Switch startSwitch, filterSwitch, logSwitch;
-    private TextView bearingTextView;
+    private Switch bearingSwitch, filterSwitch, logSwitch, stepCountSwitch;
+    private TextView bearingTextView, stepCountTextView;
     private SensorManager sensorManager;
-    private Sensor accelerometerSensor;
-    private Sensor magnetometerSensor;
+    private Sensor accelerometerSensor, magnetometerSensor, stepDetectorSensor;
 
-    private int filterCount = 0, FILTER_LENGTH = 1;
+    private int filterCount = 0, FILTER_LENGTH = 1, stepCount = 0;
     private float azimut = 0.0f;
     private float[] mGravity = null;
     private float[] mGeomagnetic = null;
@@ -36,30 +36,59 @@ public class MainActivity extends Activity implements SensorEventListener{
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        startSwitch = (Switch)findViewById(R.id.bearingSwitch);
+        bearingSwitch = (Switch)findViewById(R.id.bearingSwitch);
         filterSwitch = (Switch)findViewById(R.id.filterSwitch);
         logSwitch = (Switch)findViewById(R.id.logSwitch);
+        stepCountSwitch = (Switch)findViewById(R.id.stepCountSwitch);
 
         bearingTextView = (TextView)findViewById(R.id.bearingTextView);
+        stepCountTextView = (TextView)findViewById(R.id.stepCountTextView);
 
         powerManager = (PowerManager)getSystemService(Context.POWER_SERVICE);
         sensorManager = (SensorManager)getSystemService(Context.SENSOR_SERVICE);
 
         accelerometerSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         magnetometerSensor = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
-        startSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+        stepDetectorSensor = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_DETECTOR);
+
+        bearingSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 if (isChecked) {
                     sensorManager.registerListener(MainActivity.this, accelerometerSensor, SensorManager.SENSOR_DELAY_UI);
                     sensorManager.registerListener(MainActivity.this, magnetometerSensor, SensorManager.SENSOR_DELAY_UI);
-                    wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,Constants.wakeLockName);
-                    wakeLock.acquire();
+                    if(wakeLock == null){
+                        wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,Constants.wakeLockName);
+                        wakeLock.acquire();
+                        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+                    }
                 } else {
-                    sensorManager.unregisterListener(MainActivity.this);
-                    Intent serviceIntent = new Intent(MainActivity.this, IOService.class);
-                    serviceIntent.setAction(Constants.intentStopLog);
-                    startService(serviceIntent);
-                    wakeLock.release();
+                    sensorManager.unregisterListener(MainActivity.this,magnetometerSensor);
+                    sensorManager.unregisterListener(MainActivity.this,accelerometerSensor);
+                    if(!stepCountSwitch.isChecked()) {
+                        removeWakeLock();
+                        resetGUIValues();
+                    }
+                }
+            }
+        });
+
+        stepCountSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if (isChecked) {
+                    sensorManager.registerListener(MainActivity.this, stepDetectorSensor, SensorManager.SENSOR_DELAY_FASTEST);
+                    if(wakeLock == null){
+                        wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,Constants.wakeLockName);
+                        wakeLock.acquire();
+                        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+                    }
+                } else {
+                    sensorManager.unregisterListener(MainActivity.this,stepDetectorSensor);
+                    writeDataOut(Constants.intentWriteStepCountString,Constants.extraStepCount,System.currentTimeMillis() + "," + stepCount);
+                    stepCount = 0;
+                    if(!bearingSwitch.isChecked()) {
+                        removeWakeLock();
+                        resetGUIValues();
+                    }
                 }
             }
         });
@@ -76,6 +105,11 @@ public class MainActivity extends Activity implements SensorEventListener{
         logSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener(){
             public void onCheckedChanged(CompoundButton buttonView,boolean isChecked){
                 willLog = isChecked;
+                if(!willLog){
+                    Intent serviceIntent = new Intent(MainActivity.this, IOService.class);
+                    serviceIntent.setAction(Constants.intentStopLog);
+                    startService(serviceIntent);
+                }
             }
         });
     }
@@ -105,6 +139,10 @@ public class MainActivity extends Activity implements SensorEventListener{
     @Override
     public void onSensorChanged(SensorEvent event) {
         float tempAzimut = 0.0f;
+        if (event.sensor.getType() == Sensor.TYPE_STEP_DETECTOR){
+            stepCount++;
+            stepCountTextView.setText(Integer.toString(stepCount));
+        }
         if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER)
             mGravity = event.values;
         if (event.sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD)
@@ -125,10 +163,7 @@ public class MainActivity extends Activity implements SensorEventListener{
                     filterCount = 0;
                     azimut/=FILTER_LENGTH;
                     if(willLog) {
-                        Intent serviceIntent = new Intent(this, IOService.class);
-                        serviceIntent.setAction(Constants.intentWriteString);
-                        serviceIntent.putExtra(Constants.extraAzimut, System.currentTimeMillis() + "," + Float.toString(azimut));
-                        startService(serviceIntent);
+                        writeDataOut(Constants.intentWriteAzimutString,Constants.extraAzimut,System.currentTimeMillis() + "," + Float.toString(azimut));
                     }
                     bearingTextView.setText(String.format("%03.2f",azimut)+"\u00b0");
                     azimut = 0;
@@ -142,4 +177,21 @@ public class MainActivity extends Activity implements SensorEventListener{
 
     }
 
+    private void resetGUIValues(){
+        bearingTextView.setText(getString(R.string.defaultBearing));
+        stepCountTextView.setText(getString(R.string.defaultStepCount));
+    }
+
+    private void removeWakeLock(){
+        wakeLock.release();
+        wakeLock = null;
+        getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+    }
+
+    private void writeDataOut(String intentString, String extraName, String extra){
+        Intent serviceIntent = new Intent(this, IOService.class);
+        serviceIntent.setAction(intentString);
+        serviceIntent.putExtra(extraName,extra);
+        startService(serviceIntent);
+    }
 }

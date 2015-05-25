@@ -9,10 +9,13 @@ public class Constants {
                                 wakeLockName =                      applicationDomain + "power.WakeLockName",
                                 intentLaunchService =               applicationDomain + "intents.LaunchService",
                                 intentStopLog =                     applicationDomain + "intents.StopLog",
-                                intentWriteString =                 applicationDomain + "intents.WriteString",
+                                intentWriteAzimutString =           applicationDomain + "intents.WriteAzimutString",
+                                intentWriteStepCountString =        applicationDomain + "intents.WriteStepCountString",
                                 extraAzimut =                       applicationDomain + "extras.azimut",
+                                extraStepCount=                     applicationDomain + "extras.stepCount",
                                 sharedPreferencesName =             applicationDomain + "sharedPreferences.name",
                                 sharedPreferencesLogFileName =      applicationDomain + "sharedPreferences.logfile.name",
                                 sharedPreferencesLogFileStarted =   applicationDomain + "sharedPreferences.logfile.started",
-                                logBaseFileName =                   "logfile_";
+                                logBaseFileName =                   "logfile_",
+                                stepCountLogFileName =                   "stepcount.csv";
 }
