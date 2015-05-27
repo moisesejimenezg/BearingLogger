@@ -13,6 +13,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.WindowManager;
 import android.widget.CompoundButton;
+import android.widget.SeekBar;
 import android.widget.Switch;
 import android.widget.TextView;
 
@@ -23,6 +24,8 @@ public class MainActivity extends Activity implements SensorEventListener{
 
     private Switch bearingSwitch, filterSwitch, logSwitch, stepCountSwitch;
     private TextView bearingTextView, stepCountTextView;
+    private SeekBar filterWidthSeekBar;
+
     private SensorManager sensorManager;
     private Sensor accelerometerSensor, magnetometerSensor, stepDetectorSensor;
 
@@ -44,6 +47,9 @@ public class MainActivity extends Activity implements SensorEventListener{
         filterSwitch = (Switch)findViewById(R.id.filterSwitch);
         logSwitch = (Switch)findViewById(R.id.logSwitch);
         stepCountSwitch = (Switch)findViewById(R.id.stepCountSwitch);
+        filterWidthSeekBar = (SeekBar)findViewById(R.id.filterWidthSeekBar);
+        filterWidthSeekBar.setMax(40);
+        filterWidthSeekBar.setProgress(1);
 
         bearingTextView = (TextView)findViewById(R.id.bearingTextView);
         stepCountTextView = (TextView)findViewById(R.id.stepCountTextView);
@@ -102,6 +108,8 @@ public class MainActivity extends Activity implements SensorEventListener{
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 willFilter=isChecked;
+                if(!isChecked)
+                    samples.clear();
             }
         });
         logSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
@@ -113,6 +121,23 @@ public class MainActivity extends Activity implements SensorEventListener{
                     serviceIntent.setAction(Constants.intentStopLog);
                     startService(serviceIntent);
                 }
+            }
+        });
+        filterWidthSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                if(progress == 0)
+                    seekBar.setProgress(1);
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+                FILTER_LENGTH = seekBar.getProgress();
             }
         });
     }
