@@ -48,8 +48,8 @@ public class MainActivity extends Activity implements SensorEventListener{
         logSwitch = (Switch)findViewById(R.id.logSwitch);
         stepCountSwitch = (Switch)findViewById(R.id.stepCountSwitch);
         filterWidthSeekBar = (SeekBar)findViewById(R.id.filterWidthSeekBar);
-        filterWidthSeekBar.setMax(40);
         filterWidthSeekBar.setProgress(1);
+        filterWidthSeekBar.setMax(40);
 
         bearingTextView = (TextView)findViewById(R.id.bearingTextView);
         stepCountTextView = (TextView)findViewById(R.id.stepCountTextView);
