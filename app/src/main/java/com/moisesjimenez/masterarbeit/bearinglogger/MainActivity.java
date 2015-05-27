@@ -16,6 +16,8 @@ import android.widget.CompoundButton;
 import android.widget.Switch;
 import android.widget.TextView;
 
+import java.util.LinkedList;
+
 
 public class MainActivity extends Activity implements SensorEventListener{
 
@@ -24,11 +26,13 @@ public class MainActivity extends Activity implements SensorEventListener{
     private SensorManager sensorManager;
     private Sensor accelerometerSensor, magnetometerSensor, stepDetectorSensor;
 
-    private int filterCount = 0, FILTER_LENGTH = 1, stepCount = 0;
+    private int FILTER_LENGTH = 10, stepCount = 0;
     private float azimut = 0.0f;
     private float[] mGravity = null;
     private float[] mGeomagnetic = null;
-    private boolean willLog = false;
+    private boolean willLog = false, willFilter = false;
+
+    private LinkedList<Float> samples = null;
 
     private PowerManager powerManager;
     private PowerManager.WakeLock wakeLock;
@@ -52,19 +56,20 @@ public class MainActivity extends Activity implements SensorEventListener{
         stepDetectorSensor = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_DETECTOR);
 
         bearingSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 if (isChecked) {
                     sensorManager.registerListener(MainActivity.this, accelerometerSensor, SensorManager.SENSOR_DELAY_UI);
                     sensorManager.registerListener(MainActivity.this, magnetometerSensor, SensorManager.SENSOR_DELAY_UI);
-                    if(wakeLock == null){
-                        wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,Constants.wakeLockName);
+                    if (wakeLock == null) {
+                        wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, Constants.wakeLockName);
                         wakeLock.acquire();
                         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
                     }
                 } else {
-                    sensorManager.unregisterListener(MainActivity.this,magnetometerSensor);
-                    sensorManager.unregisterListener(MainActivity.this,accelerometerSensor);
-                    if(!stepCountSwitch.isChecked()) {
+                    sensorManager.unregisterListener(MainActivity.this, magnetometerSensor);
+                    sensorManager.unregisterListener(MainActivity.this, accelerometerSensor);
+                    if (!stepCountSwitch.isChecked()) {
                         removeWakeLock();
                         resetGUIValues();
                     }
@@ -73,37 +78,35 @@ public class MainActivity extends Activity implements SensorEventListener{
         });
 
         stepCountSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 if (isChecked) {
                     sensorManager.registerListener(MainActivity.this, stepDetectorSensor, SensorManager.SENSOR_DELAY_FASTEST);
-                    if(wakeLock == null){
-                        wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,Constants.wakeLockName);
+                    if (wakeLock == null) {
+                        wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, Constants.wakeLockName);
                         wakeLock.acquire();
                         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
                     }
                 } else {
-                    sensorManager.unregisterListener(MainActivity.this,stepDetectorSensor);
-                    writeDataOut(Constants.intentWriteStepCountString,Constants.extraStepCount,System.currentTimeMillis() + "," + stepCount);
+                    sensorManager.unregisterListener(MainActivity.this, stepDetectorSensor);
+                    writeDataOut(Constants.intentWriteStepCountString, Constants.extraStepCount, System.currentTimeMillis() + "," + stepCount);
                     stepCount = 0;
-                    if(!bearingSwitch.isChecked()) {
+                    if (!bearingSwitch.isChecked()) {
                         removeWakeLock();
                         resetGUIValues();
                     }
                 }
             }
         });
-        filterSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener(){
-            public void onCheckedChanged(CompoundButton buttonView,boolean isChecked){
-                if (isChecked) {
-                    FILTER_LENGTH = 10;
-                }else{
-                    FILTER_LENGTH = 1;
-                }
-                filterCount = 0;
+        filterSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                willFilter=isChecked;
             }
         });
-        logSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener(){
-            public void onCheckedChanged(CompoundButton buttonView,boolean isChecked){
+        logSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 willLog = isChecked;
                 if(!willLog){
                     Intent serviceIntent = new Intent(MainActivity.this, IOService.class);
@@ -152,21 +155,27 @@ public class MainActivity extends Activity implements SensorEventListener{
             float I[] = new float[9];
             boolean success = SensorManager.getRotationMatrix(R, I, mGravity, mGeomagnetic);
             if (success) {
-                filterCount++;
                 float orientation[] = new float[3];
                 SensorManager.getOrientation(R, orientation);
                 tempAzimut = (float)Math.toDegrees(orientation[0]); // orientation contains: azimut, pitch and roll
                 if(tempAzimut<0)
                     tempAzimut+=360;
-                azimut+=tempAzimut;
-                if(filterCount == FILTER_LENGTH) {
-                    filterCount = 0;
-                    azimut/=FILTER_LENGTH;
-                    if(willLog) {
-                        writeDataOut(Constants.intentWriteAzimutString,Constants.extraAzimut,System.currentTimeMillis() + "," + Float.toString(azimut));
-                    }
-                    bearingTextView.setText(String.format("%03.2f",azimut)+"\u00b0");
-                    azimut = 0;
+                if(willFilter) {
+                    if(samples == null)
+                        samples = new LinkedList<>();
+                    samples.add(tempAzimut);
+                    if(samples.size() > FILTER_LENGTH)
+                        samples.remove();
+                    for(float f : samples)
+                        azimut += f;
+                    azimut/=samples.size();
+                }
+                else
+                    azimut=tempAzimut;
+                bearingTextView.setText(String.format("%03.2f",azimut)+"\u00b0");
+                azimut = 0;
+                if(willLog) {
+                    writeDataOut(Constants.intentWriteAzimutString,Constants.extraAzimut,System.currentTimeMillis() + "," + Float.toString(azimut));
                 }
             }
         }
