@@ -198,10 +198,10 @@ public class MainActivity extends Activity implements SensorEventListener{
                 else
                     azimut=tempAzimut;
                 bearingTextView.setText(String.format("%03.2f",azimut)+"\u00b0");
-                azimut = 0;
                 if(willLog) {
                     writeDataOut(Constants.intentWriteAzimutString,Constants.extraAzimut,System.currentTimeMillis() + "," + Float.toString(azimut));
                 }
+                azimut = 0;
             }
         }
     }
