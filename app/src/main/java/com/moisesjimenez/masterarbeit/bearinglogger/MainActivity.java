@@ -49,7 +49,7 @@ public class MainActivity extends Activity implements SensorEventListener{
         stepCountSwitch = (Switch)findViewById(R.id.stepCountSwitch);
         filterWidthSeekBar = (SeekBar)findViewById(R.id.filterWidthSeekBar);
         filterWidthSeekBar.setProgress(1);
-        filterWidthSeekBar.setMax(40);
+        filterWidthSeekBar.setMax(100);
 
         bearingTextView = (TextView)findViewById(R.id.bearingTextView);
         stepCountTextView = (TextView)findViewById(R.id.stepCountTextView);
@@ -197,9 +197,12 @@ public class MainActivity extends Activity implements SensorEventListener{
                 }
                 else
                     azimut=tempAzimut;
-                bearingTextView.setText(String.format("%03.2f",azimut)+"\u00b0");
+                bearingTextView.setText(String.format("%03.0f",azimut)+"\u00b0");
                 if(willLog) {
-                    writeDataOut(Constants.intentWriteAzimutString,Constants.extraAzimut,System.currentTimeMillis() + "," + Float.toString(azimut));
+                    if(willFilter)
+                        writeDataOut(Constants.intentWriteAzimutString,Constants.extraAzimut,System.currentTimeMillis() + "," + Float.toString(azimut) + "," + Float.toString(tempAzimut));
+                    else
+                        writeDataOut(Constants.intentWriteAzimutString,Constants.extraAzimut,System.currentTimeMillis() + "," + Float.toString(azimut));
                 }
                 azimut = 0;
             }

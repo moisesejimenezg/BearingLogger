@@ -94,7 +94,7 @@
                         android:layout_height="wrap_content"
                         android:layout_alignParentRight="true"
                         android:paddingRight="10dp"
-                        android:text="40" />
+                        android:text="100" />
                 </RelativeLayout>
             </LinearLayout>
         </LinearLayout>
