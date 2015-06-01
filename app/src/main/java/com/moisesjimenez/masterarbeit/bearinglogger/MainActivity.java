@@ -34,15 +34,17 @@ public class MainActivity extends Activity implements SensorEventListener{
     private SensorManager sensorManager;
     private Sensor accelerometerSensor, magnetometerSensor, stepDetectorSensor;
 
-    private int FILTER_LENGTH = 10, stepCount = 0;
-    private double azimut = 0.0f;
+    private int FILTER_LENGTH = 1, stepCount = 0;
+    private double azimut = 0.0f, tempAzimut = 0.0f;;
     private float x_coordinate = 0.0f;
     private float y_coordinate = 0.0f;
     private float[] mGravity = null;
     private float[] mGeomagnetic = null;
-    private boolean willLog = false, willFilter = false;
+    private boolean willLog = false, willFilter = false, willCount = false;
 
-    private LinkedList<Float> samples = null;
+    private String toWrite = "";
+
+    private LinkedList<Double> samples = null;
 
     private PowerManager powerManager;
     private PowerManager.WakeLock wakeLock;
@@ -109,6 +111,7 @@ public class MainActivity extends Activity implements SensorEventListener{
                         resetGUIValues();
                     }
                 }
+                willCount = isChecked;
             }
         });
         filterSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
@@ -174,7 +177,6 @@ public class MainActivity extends Activity implements SensorEventListener{
 
     @Override
     public void onSensorChanged(SensorEvent event) {
-        float tempAzimut = 0.0f;
         if (event.sensor.getType() == Sensor.TYPE_STEP_DETECTOR){
             stepCount++;
             stepCountTextView.setText(Integer.toString(stepCount));
@@ -199,9 +201,10 @@ public class MainActivity extends Activity implements SensorEventListener{
                         samples.remove();
                     x_coordinate = 0;
                     y_coordinate = 0;
-                    for(float f : samples){
-                        x_coordinate += sin(f);
-                        y_coordinate += cos(f);
+                    for(double f : samples){
+                        x_coordinate += Math.sin(f);
+                        y_coordinate += Math.cos(f);
+
                     }
                     x_coordinate /= samples.size();
                     y_coordinate /= samples.size();
@@ -210,15 +213,21 @@ public class MainActivity extends Activity implements SensorEventListener{
                 else
                     azimut = tempAzimut;
                 azimut = Math.toDegrees(azimut);
+                tempAzimut = Math.toDegrees(tempAzimut);
                 if(azimut<0)
                     azimut+=360;
+                if(tempAzimut<0)
+                    tempAzimut+=360;
                 if(willLog) {
+                    toWrite += System.currentTimeMillis() + ",";
                     if(willFilter)
-                        writeDataOut(Constants.intentWriteAzimutString,Constants.extraAzimut,System.currentTimeMillis() + "," + Double.toString(azimut) + "," + Float.toString(tempAzimut));
-                    else
-                        writeDataOut(Constants.intentWriteAzimutString,Constants.extraAzimut,System.currentTimeMillis() + "," + Double.toString(azimut));
+                        toWrite += Double.toString(azimut) + ",";
+                    toWrite += Double.toString(tempAzimut) + ",";
+                    if(willCount)
+                        toWrite += Integer.toString(stepCount);
+                    writeDataOut(Constants.intentWriteAzimutString,Constants.extraAzimut,toWrite);
                 }
-                bearingTextView.setText(String.format("%03.2f",azimut)+"\u00b0");
+                bearingTextView.setText(String.format("%03.0f",azimut)+"\u00b0");
             }
         }
     }
