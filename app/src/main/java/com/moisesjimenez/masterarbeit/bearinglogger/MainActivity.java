@@ -19,6 +19,11 @@ import android.widget.TextView;
 
 import java.util.LinkedList;
 
+import static android.util.FloatMath.cos;
+import static android.util.FloatMath.sin;
+import static java.lang.Math.atan;
+import static java.lang.Math.atan2;
+
 
 public class MainActivity extends Activity implements SensorEventListener{
 
@@ -29,13 +34,17 @@ public class MainActivity extends Activity implements SensorEventListener{
     private SensorManager sensorManager;
     private Sensor accelerometerSensor, magnetometerSensor, stepDetectorSensor;
 
-    private int FILTER_LENGTH = 10, stepCount = 0;
-    private float azimut = 0.0f;
+    private int FILTER_LENGTH = 1, stepCount = 0;
+    private double azimut = 0.0f, tempAzimut = 0.0f;;
+    private float x_coordinate = 0.0f;
+    private float y_coordinate = 0.0f;
     private float[] mGravity = null;
     private float[] mGeomagnetic = null;
-    private boolean willLog = false, willFilter = false;
+    private boolean willLog = false, willFilter = false, willCount = false;
 
-    private LinkedList<Float> samples = null;
+    private String toWrite = "";
+
+    private LinkedList<Double> samples = null;
 
     private PowerManager powerManager;
     private PowerManager.WakeLock wakeLock;
@@ -102,6 +111,7 @@ public class MainActivity extends Activity implements SensorEventListener{
                         resetGUIValues();
                     }
                 }
+                willCount = isChecked;
             }
         });
         filterSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
@@ -128,6 +138,7 @@ public class MainActivity extends Activity implements SensorEventListener{
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                 if(progress == 0)
                     seekBar.setProgress(1);
+                FILTER_LENGTH = seekBar.getProgress();
             }
 
             @Override
@@ -166,7 +177,6 @@ public class MainActivity extends Activity implements SensorEventListener{
 
     @Override
     public void onSensorChanged(SensorEvent event) {
-        float tempAzimut = 0.0f;
         if (event.sensor.getType() == Sensor.TYPE_STEP_DETECTOR){
             stepCount++;
             stepCountTextView.setText(Integer.toString(stepCount));
@@ -182,29 +192,43 @@ public class MainActivity extends Activity implements SensorEventListener{
             if (success) {
                 float orientation[] = new float[3];
                 SensorManager.getOrientation(R, orientation);
-                tempAzimut = (float)Math.toDegrees(orientation[0]); // orientation contains: azimut, pitch and roll
-                if(tempAzimut<0)
-                    tempAzimut+=360;
+                tempAzimut = orientation[0]; // orientation contains: azimut, pitch and roll
                 if(willFilter) {
                     if(samples == null)
                         samples = new LinkedList<>();
                     samples.add(tempAzimut);
                     if(samples.size() > FILTER_LENGTH)
                         samples.remove();
-                    for(float f : samples)
-                        azimut += f;
-                    azimut/=samples.size();
+                    x_coordinate = 0;
+                    y_coordinate = 0;
+                    for(double f : samples){
+                        x_coordinate += Math.sin(f);
+                        y_coordinate += Math.cos(f);
+
+                    }
+                    x_coordinate /= samples.size();
+                    y_coordinate /= samples.size();
+                    azimut = atan2(x_coordinate, y_coordinate);
                 }
                 else
-                    azimut=tempAzimut;
-                bearingTextView.setText(String.format("%03.0f",azimut)+"\u00b0");
+                    azimut = tempAzimut;
+                azimut = Math.toDegrees(azimut);
+                tempAzimut = Math.toDegrees(tempAzimut);
+                if(azimut<0)
+                    azimut+=360;
+                if(tempAzimut<0)
+                    tempAzimut+=360;
                 if(willLog) {
+                    toWrite += System.currentTimeMillis() + ",";
                     if(willFilter)
-                        writeDataOut(Constants.intentWriteAzimutString,Constants.extraAzimut,System.currentTimeMillis() + "," + Float.toString(azimut) + "," + Float.toString(tempAzimut));
-                    else
-                        writeDataOut(Constants.intentWriteAzimutString,Constants.extraAzimut,System.currentTimeMillis() + "," + Float.toString(azimut));
+                        toWrite += Double.toString(azimut) + ",";
+                    toWrite += Double.toString(tempAzimut) + ",";
+                    if(willCount)
+                        toWrite += Integer.toString(stepCount);
+                    writeDataOut(Constants.intentWriteAzimutString,Constants.extraAzimut,toWrite);
+                    toWrite = "";
                 }
-                azimut = 0;
+                bearingTextView.setText(String.format("%03.0f",azimut)+"\u00b0");
             }
         }
     }
