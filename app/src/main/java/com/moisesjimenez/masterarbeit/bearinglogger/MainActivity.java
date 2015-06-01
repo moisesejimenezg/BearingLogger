@@ -19,6 +19,11 @@ import android.widget.TextView;
 
 import java.util.LinkedList;
 
+import static android.util.FloatMath.cos;
+import static android.util.FloatMath.sin;
+import static java.lang.Math.atan;
+import static java.lang.Math.atan2;
+
 
 public class MainActivity extends Activity implements SensorEventListener{
 
@@ -30,7 +35,9 @@ public class MainActivity extends Activity implements SensorEventListener{
     private Sensor accelerometerSensor, magnetometerSensor, stepDetectorSensor;
 
     private int FILTER_LENGTH = 10, stepCount = 0;
-    private float azimut = 0.0f;
+    private double azimut = 0.0f;
+    private float x_coordinate = 0.0f;
+    private float y_coordinate = 0.0f;
     private float[] mGravity = null;
     private float[] mGeomagnetic = null;
     private boolean willLog = false, willFilter = false;
@@ -128,6 +135,7 @@ public class MainActivity extends Activity implements SensorEventListener{
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                 if(progress == 0)
                     seekBar.setProgress(1);
+                FILTER_LENGTH = seekBar.getProgress();
             }
 
             @Override
@@ -182,29 +190,35 @@ public class MainActivity extends Activity implements SensorEventListener{
             if (success) {
                 float orientation[] = new float[3];
                 SensorManager.getOrientation(R, orientation);
-                tempAzimut = (float)Math.toDegrees(orientation[0]); // orientation contains: azimut, pitch and roll
-                if(tempAzimut<0)
-                    tempAzimut+=360;
+                tempAzimut = orientation[0]; // orientation contains: azimut, pitch and roll
                 if(willFilter) {
                     if(samples == null)
                         samples = new LinkedList<>();
                     samples.add(tempAzimut);
                     if(samples.size() > FILTER_LENGTH)
                         samples.remove();
-                    for(float f : samples)
-                        azimut += f;
-                    azimut/=samples.size();
+                    x_coordinate = 0;
+                    y_coordinate = 0;
+                    for(float f : samples){
+                        x_coordinate += sin(f);
+                        y_coordinate += cos(f);
+                    }
+                    x_coordinate /= samples.size();
+                    y_coordinate /= samples.size();
+                    azimut = atan2(x_coordinate, y_coordinate);
                 }
                 else
-                    azimut=tempAzimut;
-                bearingTextView.setText(String.format("%03.0f",azimut)+"\u00b0");
+                    azimut = tempAzimut;
+                azimut = Math.toDegrees(azimut);
+                if(azimut<0)
+                    azimut+=360;
                 if(willLog) {
                     if(willFilter)
-                        writeDataOut(Constants.intentWriteAzimutString,Constants.extraAzimut,System.currentTimeMillis() + "," + Float.toString(azimut) + "," + Float.toString(tempAzimut));
+                        writeDataOut(Constants.intentWriteAzimutString,Constants.extraAzimut,System.currentTimeMillis() + "," + Double.toString(azimut) + "," + Float.toString(tempAzimut));
                     else
-                        writeDataOut(Constants.intentWriteAzimutString,Constants.extraAzimut,System.currentTimeMillis() + "," + Float.toString(azimut));
+                        writeDataOut(Constants.intentWriteAzimutString,Constants.extraAzimut,System.currentTimeMillis() + "," + Double.toString(azimut));
                 }
-                azimut = 0;
+                bearingTextView.setText(String.format("%03.2f",azimut)+"\u00b0");
             }
         }
     }
