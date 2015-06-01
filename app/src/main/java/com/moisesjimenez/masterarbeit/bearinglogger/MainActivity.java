@@ -226,6 +226,7 @@ public class MainActivity extends Activity implements SensorEventListener{
                     if(willCount)
                         toWrite += Integer.toString(stepCount);
                     writeDataOut(Constants.intentWriteAzimutString,Constants.extraAzimut,toWrite);
+                    toWrite = "";
                 }
                 bearingTextView.setText(String.format("%03.0f",azimut)+"\u00b0");
             }
